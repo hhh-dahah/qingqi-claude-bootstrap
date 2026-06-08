@@ -14,7 +14,7 @@ function Write-Step {
 
 function Write-WarnLine {
   param([string]$Message)
-  Write-Host "WARN $Message" -ForegroundColor Yellow
+  Write-Host "提醒  $Message" -ForegroundColor Yellow
 }
 
 function Test-Command {
@@ -44,43 +44,43 @@ function Update-PathFromRegistry {
   }
 }
 
-Write-Host "Qingqi public Claude Code bootstrap launcher" -ForegroundColor Cyan
-Write-Host "This public launcher does not contain secrets. It signs in to GitHub, then fetches the private qingqi bootstrap script."
-Write-Host "You can run it from any folder or drive. It does not need the qingqi repo to exist first."
+Write-Host "青契公开安装器" -ForegroundColor Cyan
+Write-Host "说明：这个公开安装器不包含密钥。它会先登录 GitHub，再从私有青契仓库读取真正的安装脚本。"
+Write-Host "可以在任意盘、任意文件夹运行；不需要先创建或进入青契项目目录。"
 
 Update-PathFromRegistry
 
-Write-Step "Check GitHub CLI"
+Write-Step "检查 GitHub CLI"
 if (-not (Test-Command "gh")) {
   if (-not (Test-Command "winget")) {
-    throw "GitHub CLI is missing and winget is not available. Please install GitHub CLI from https://cli.github.com/ and rerun this command."
+    throw "没有找到 GitHub CLI，也没有找到 winget。请先从 https://cli.github.com/ 安装 GitHub CLI，然后重新运行本命令。"
   }
   winget install --id GitHub.cli -e --accept-package-agreements --accept-source-agreements
   Update-PathFromRegistry
 }
 
 if (-not (Test-Command "gh")) {
-  throw "GitHub CLI was installed but current PowerShell cannot find it. Close PowerShell, open it again, then rerun this command."
+  throw "GitHub CLI 已安装，但当前 PowerShell 还找不到它。请关闭 PowerShell，重新打开后再运行本命令。"
 }
 
-Write-Step "GitHub sign-in for private qingqi repo"
+Write-Step "登录 GitHub，用来访问青契私有仓库"
 gh auth status -h github.com *> $null
 if ($LASTEXITCODE -ne 0) {
-  Write-Host "A browser window will open. Sign in with a GitHub account that has access to $PrivateRepo."
+  Write-Host "接下来会打开浏览器。请用有青契仓库权限的 GitHub 账号登录：$PrivateRepo"
   gh auth login -h github.com -p https -w
 }
 
-Write-Step "Fetch private qingqi bootstrap script"
+Write-Step "读取私有青契仓库里的安装脚本"
 $content = gh api "repos/$PrivateRepo/contents/$BootstrapPath`?ref=$Branch" --jq .content
 if ([string]::IsNullOrWhiteSpace($content)) {
-  throw "Cannot fetch $BootstrapPath from $PrivateRepo@$Branch. Check GitHub access permission."
+  throw "无法从 $PrivateRepo@$Branch 读取 $BootstrapPath。请确认这个 GitHub 账号已经被加入青契私有仓库。"
 }
 
 $script = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($content -replace '\s','')))
 if ($script -notmatch "Qingqi Claude Code one-command bootstrap") {
-  Write-WarnLine "Fetched script does not contain the expected banner. Continuing, but verify the private repo path if this looks wrong."
+  Write-WarnLine "读取到的脚本没有预期标识。会继续执行；如果后续看起来不对，请检查私有仓库路径。"
 }
 
-Write-Step "Run private bootstrap script"
+Write-Step "运行青契真正的一键安装脚本"
 $block = [ScriptBlock]::Create($script)
 & $block
