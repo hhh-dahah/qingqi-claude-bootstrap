@@ -77,6 +77,7 @@ if ([string]::IsNullOrWhiteSpace($content)) {
 }
 
 $script = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String(($content -replace '\s','')))
+$script = $script.TrimStart([char]0xFEFF)
 if ($script -notmatch "青契 Claude Code 一键安装脚本") {
   Write-WarnLine "读取到的脚本没有预期标识。会继续执行；如果后续看起来不对，请检查私有仓库路径。"
 }
