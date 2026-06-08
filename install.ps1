@@ -82,5 +82,7 @@ if ($script -notmatch "青契 Claude Code 一键安装脚本") {
 }
 
 Write-Step "运行青契真正的一键安装脚本"
-$block = [ScriptBlock]::Create($script)
-& $block
+$tempScript = Join-Path $env:TEMP "qingqi-claude-code-bootstrap.ps1"
+$utf8Bom = New-Object System.Text.UTF8Encoding($true)
+[System.IO.File]::WriteAllText($tempScript, $script, $utf8Bom)
+& powershell -NoProfile -ExecutionPolicy Bypass -File $tempScript
